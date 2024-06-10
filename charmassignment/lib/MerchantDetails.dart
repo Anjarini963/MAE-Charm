@@ -4,7 +4,7 @@ import 'Coupons.dart';
 
 class MerchantDetails extends StatefulWidget {
   final String dealId;
-  final String username;  // Add this line
+  final String username;
 
   const MerchantDetails({Key? key, required this.dealId, required this.username}) : super(key: key);
 
@@ -15,11 +15,18 @@ class MerchantDetails extends StatefulWidget {
 class _MerchantDetailsState extends State<MerchantDetails> {
   bool isLoading = true;
   Map<String, dynamic>? dealData;
+  final TextEditingController _reviewController = TextEditingController();
+  final TextEditingController _ratingController = TextEditingController();
+  List<Map<String, dynamic>> reviews = [];
+  int totalCoupons = 0;
+  int pendingOrRedeemedCoupons = 0;
 
   @override
   void initState() {
     super.initState();
     fetchDealData();
+    fetchReviews();
+    fetchCouponData();
   }
 
   Future<void> fetchDealData() async {
@@ -41,29 +48,104 @@ class _MerchantDetailsState extends State<MerchantDetails> {
     }
   }
 
-  Future<void> _getCoupon() async {
-    if (dealData != null && dealData!['Coupon Number'] > 0) {
-      String updatedCouponNumber = (dealData!['Coupon Number'] - 1).toString();
-      String couponCode = dealData!['Coupon Code'];
+  Future<void> fetchReviews() async {
+    try {
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('Reviews')
+          .where('DealID', isEqualTo: widget.dealId)
+          .get();
 
-      await FirebaseFirestore.instance.collection('Deals').doc(widget.dealId).update({
-        'Coupon Number': int.parse(updatedCouponNumber)
+      if (snapshot.docs.isNotEmpty) {
+        reviews = snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+        setState(() {});
+      }
+    } catch (e) {
+      print('Error fetching reviews: $e');
+    }
+  }
+
+  Future<void> fetchCouponData() async {
+    try {
+      QuerySnapshot snapshot = await FirebaseFirestore.instance
+          .collection('Coupons')
+          .where('DealID', isEqualTo: widget.dealId)
+          .get();
+
+      totalCoupons = snapshot.docs.length;
+      pendingOrRedeemedCoupons = snapshot.docs.where((doc) {
+        String status = doc['Status'];
+        return status == 'pending redemption' || status == 'redeemed';
+      }).length;
+
+      setState(() {});
+    } catch (e) {
+      print('Error fetching coupon data: $e');
+    }
+  }
+
+  Future<void> _getCoupon() async {
+    try {
+      QuerySnapshot couponSnapshot = await FirebaseFirestore.instance
+          .collection('Coupons')
+          .where('DealID', isEqualTo: widget.dealId)
+          .where('Status', isEqualTo: 'unused')
+          .limit(1)
+          .get();
+
+      if (couponSnapshot.docs.isNotEmpty) {
+        DocumentSnapshot couponDoc = couponSnapshot.docs.first;
+        String couponCode = couponDoc['Coupon Code'];
+
+        await couponDoc.reference.update({'Status': 'pending redemption'});
+
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => Coupons(
+              collectionId: couponDoc.id,
+              username: widget.username,
+              category: dealData!['Category'],
+              restaurant: dealData!['Vendor Name'],
+              date: DateTime.now().toString(),
+              couponCode: couponCode,
+            ),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("No coupons available for this deal.")),
+        );
+      }
+    } catch (e) {
+      print('Error fetching coupon: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to fetch coupon: $e")),
+      );
+    }
+  }
+
+  Future<void> _submitReview() async {
+    String uid = widget.username;
+
+    try {
+      await FirebaseFirestore.instance.collection('Reviews').add({
+        'DealID': widget.dealId,
+        'UID': uid,
+        'Review': _reviewController.text,
+        'Rating': int.parse(_ratingController.text),
+        'Username': widget.username, // Add the username field
       });
 
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (context) => Coupons(
-            collectionId: widget.dealId,
-            username: widget.username,  // Pass username to Coupons page
-            category: dealData!['Category'],
-            restaurant: dealData!['Vendor Name'],
-            date: DateTime.now().toString(),
-            couponCode: couponCode,
-          )),
-      );
-    } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("No coupons available for this deal."))
+        const SnackBar(content: Text("Review submitted successfully.")),
+      );
+
+      _reviewController.clear();
+      _ratingController.clear();
+      fetchReviews(); // Refresh the reviews list
+    } catch (e) {
+      print('Error submitting review: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to submit review: $e")),
       );
     }
   }
@@ -88,7 +170,9 @@ class _MerchantDetailsState extends State<MerchantDetails> {
                 _buildImageSection(dealData?['Deal Image'] ?? ''),
                 _buildDetailsSection(dealData?['Category'] ?? 'N/A', dealData?['Rating'].toString() ?? 'N/A'),
                 _buildCouponDetails(dealData?['Description'] ?? ''),
+                _buildReviewsSection(),
                 _buildReviewSection(),
+                _buildCouponProgressBar(),
               ],
             ),
             bottomNavigationBar: _buildBottomBar(context),
@@ -143,6 +227,55 @@ class _MerchantDetailsState extends State<MerchantDetails> {
         ),
       );
 
+  Widget _buildReviewsSection() => SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Reviews', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              reviews.isEmpty
+                  ? const Text('No reviews available for this deal.', style: TextStyle(fontSize: 16))
+                  : Column(
+                      children: reviews.map((review) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.blue, width: 1),
+                            ),
+                            padding: const EdgeInsets.all(10),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(review['Username'], style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.star, color: Colors.amber, size: 24),
+                                        Text(review['Rating'].toString(), style: const TextStyle(fontSize: 16)),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 5),
+                                Text(review['Review'], style: const TextStyle(fontSize: 16)),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+            ],
+          ),
+        ),
+      );
+
   Widget _buildReviewSection() => SliverToBoxAdapter(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -151,21 +284,53 @@ class _MerchantDetailsState extends State<MerchantDetails> {
             children: [
               const Text('Leave Review', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
-              const TextField(
+              TextField(
+                controller: _reviewController,
                 keyboardType: TextInputType.multiline,
                 maxLines: 5,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: 'Write your review here...',
                   border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 10),
+              TextField(
+                controller: _ratingController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  hintText: 'Rating out of 5',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
               ElevatedButton(
-                onPressed: () {
-                  // Implement review submission logic
-                },
+                onPressed: _submitReview,
                 child: const Text('Submit Review', style: TextStyle(color: Colors.white)),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      );
+
+  Widget _buildCouponProgressBar() => SliverToBoxAdapter(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Coupons Left', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              LinearProgressIndicator(
+                value: totalCoupons == 0 ? 0 : pendingOrRedeemedCoupons / totalCoupons,
+                backgroundColor: Colors.grey[300],
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Coupons: $pendingOrRedeemedCoupons / $totalCoupons',
+                style: const TextStyle(fontSize: 16),
               ),
             ],
           ),

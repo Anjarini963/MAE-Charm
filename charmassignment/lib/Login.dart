@@ -1,3 +1,4 @@
+import 'package:charmassignment/AdminHome.dart';
 import 'package:charmassignment/VendorHome.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -53,7 +54,9 @@ class _LoginState extends State<Login> {
             
           
           } else if (role == 'admin') {
-            // Replace with navigation to your AdminHome page (once created)
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const AdminHome()),
+            );
           
           } else {
             _showDialog('Error', 'Invalid role in user document');

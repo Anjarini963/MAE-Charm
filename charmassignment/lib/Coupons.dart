@@ -4,6 +4,8 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'package:qr_flutter/qr_flutter.dart';
+import 'dart:typed_data';
 
 class Coupons extends StatelessWidget {
   final String collectionId;
@@ -43,6 +45,11 @@ class Coupons extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            QrImageView(
+              data: couponCode,
+              version: QrVersions.auto,
+              size: 200.0,
+            ),
             const SizedBox(height: 20),
             const Text('Coupon Code:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             Text(couponCode, style: const TextStyle(fontSize: 16, color: Colors.black87)),
@@ -103,12 +110,15 @@ class Coupons extends StatelessWidget {
   ) async {
     final pdf = pw.Document();
 
+    final qrImage = await _generateQrImage(couponCode);
+
     pdf.addPage(
       pw.Page(
         build: (pw.Context context) => pw.Center(
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
+              pw.Image(pw.MemoryImage(qrImage), width: 200, height: 200),
               pw.Text('Coupon Code:', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
               pw.Text(couponCode, style: pw.TextStyle(fontSize: 16)),
               pw.Divider(),
@@ -131,6 +141,27 @@ class Coupons extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Coupon downloaded to ${file.path}')),
     );
+  }
+
+  Future<Uint8List> _generateQrImage(String data) async {
+    final qrValidationResult = QrValidator.validate(
+      data: data,
+      version: QrVersions.auto,
+      errorCorrectionLevel: QrErrorCorrectLevel.L,
+    );
+
+    if (qrValidationResult.status == QrValidationStatus.valid) {
+      final qrCode = qrValidationResult.qrCode!;
+      final painter = QrPainter.withQr(
+        qr: qrCode,
+        color: const Color(0xFF000000),
+        gapless: true,
+      );
+      final image = await painter.toImageData(200);
+      return image!.buffer.asUint8List();
+    } else {
+      throw Exception('Could not generate QR code');
+    }
   }
 
   pw.Widget _buildDetailRowPdf(String label, String value) {

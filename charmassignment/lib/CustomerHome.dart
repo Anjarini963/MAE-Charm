@@ -71,6 +71,7 @@ class _CustomerHomeState extends State<CustomerHome> {
         loadedDeals.add({
           'uid': data['uid'],
           'merchantName': data['Vendor Name'] ?? 'Unknown Merchant',
+          'couponName': data['Coupon Name'] ?? 'Unknown Coupon', // Added coupon name
           'category': data['Category'] ?? 'No Category',
           'profilePhoto': data['Merchant photo'] ?? '',
           'docId': doc.id,
@@ -95,6 +96,16 @@ class _CustomerHomeState extends State<CustomerHome> {
     setState(() {
       _filteredDeals = tempDeals;
     });
+  }
+
+  String getCurrentLabel() {
+    if (_searchTerm.isNotEmpty) {
+      return 'Search results for: "$_searchTerm"';
+    } else if (selectedCategory == 'All') {
+      return 'All Deals';
+    } else {
+      return '$selectedCategory Deals';
+    }
   }
 
   @override
@@ -200,6 +211,16 @@ class _CustomerHomeState extends State<CustomerHome> {
                   .toList(),
             ),
           ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              getCurrentLabel(),
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
           Expanded(
             child: ListView.builder(
               itemCount: _filteredDeals.length,
@@ -207,7 +228,7 @@ class _CustomerHomeState extends State<CustomerHome> {
                 var deal = _filteredDeals[index];
                 return Card(
                   elevation: 4,
-                  margin: const EdgeInsets.all(8),
+                  margin: const EdgeInsets.all(12), // Increased margin
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10)),
                   child: InkWell(
@@ -217,14 +238,13 @@ class _CustomerHomeState extends State<CustomerHome> {
                         MaterialPageRoute(
                           builder: (context) => MerchantDetails(
                             dealId: deal['docId'],
-                            username:
-                                _username, // Pass username to MerchantDetails
+                            username: _username, // Pass username to MerchantDetails
                           ),
                         ),
                       );
                     },
                     child: Padding(
-                      padding: const EdgeInsets.all(8.0),
+                      padding: const EdgeInsets.all(16.0), // Increased padding
                       child: Row(
                         children: [
                           Container(
@@ -250,10 +270,16 @@ class _CustomerHomeState extends State<CustomerHome> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
+                                  deal['couponName'], // Display coupon name
+                                  style: const TextStyle(
+                                    fontSize: 18, // Increased font size
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Text(
                                   deal['merchantName'],
                                   style: const TextStyle(
                                     fontSize: 16,
-                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
                                 Text(

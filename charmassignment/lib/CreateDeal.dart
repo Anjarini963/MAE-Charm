@@ -16,6 +16,7 @@ class CreateDeal extends StatefulWidget {
 class _CreateDealState extends State<CreateDeal> {
   final TextEditingController _detailsController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
+  final TextEditingController _couponNameController = TextEditingController(); // New controller for coupon name
   final TextEditingController _couponCountController = TextEditingController();
   File? _logoImage;
   File? _restaurantImage;
@@ -47,7 +48,6 @@ class _CreateDealState extends State<CreateDeal> {
     String dealId = FirebaseFirestore.instance.collection('Deals').doc().id;
     String vendorName = 'Unknown Vendor';
     int couponNumber = int.tryParse(_couponCountController.text) ?? 0;
-    String couponCode = generateCouponCode();
 
     if (_logoImage != null && _restaurantImage != null) {
       try {
@@ -69,12 +69,25 @@ class _CreateDealState extends State<CreateDeal> {
           'Description': _detailsController.text,
           'Rating': 0,
           'Category': _categoryController.text,
-          'Coupon Code': couponCode,
-          'Coupon Number': couponNumber
+          'Coupon Name': _couponNameController.text,  // New field for coupon name
         });
+
+        for (int i = 0; i < couponNumber; i++) {
+          String couponCode = generateCouponCode();
+          String couponId = FirebaseFirestore.instance.collection('Coupons').doc().id;
+
+          await FirebaseFirestore.instance.collection('Coupons').doc(couponId).set({
+            'CollectionID': couponId,
+            'uid': uid,
+            'DealID': dealId,
+            'Coupon Code': couponCode,
+            'Status': 'unused',
+          });
+        }
 
         _detailsController.clear();
         _categoryController.clear();
+        _couponNameController.clear(); // Clear the new coupon name controller
         _couponCountController.clear();
         setState(() {
           _logoImage = null;
@@ -124,6 +137,14 @@ class _CreateDealState extends State<CreateDeal> {
             ),
             const SizedBox(height: 20),
             TextField(
+              controller: _couponNameController,  // New text field for coupon name
+              decoration: const InputDecoration(
+                labelText: 'Coupon Name',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 20),
+            TextField(
               controller: _couponCountController,
               decoration: const InputDecoration(
                 labelText: 'How many coupons?',
@@ -142,11 +163,11 @@ class _CreateDealState extends State<CreateDeal> {
             ),
             const SizedBox(height: 20),
             _restaurantImage == null
-                ? const Text('No restaurant image selected.')
+                ? const Text('No Merchant image selected.')
                 : Image.file(_restaurantImage!),
             ElevatedButton.icon(
               icon: const Icon(Icons.image),
-              label: const Text('Upload Restaurant Image'),
+              label: const Text('Upload Merchant Image'),
               onPressed: () => getImage(false),
             ),
             const SizedBox(height: 20),

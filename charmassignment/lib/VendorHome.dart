@@ -35,6 +35,8 @@ class _VendorHomeState extends State<VendorHome> {
           _username = userData['fullName'] as String? ?? 'No Name';
           _profilePhotoUrl = userData['profilePhoto'] as String? ?? '';
         });
+      } else{
+        print("something went wrong");
       }
     }
   }
@@ -61,7 +63,7 @@ class _VendorHomeState extends State<VendorHome> {
           ListTile(
             leading: CircleAvatar(
               backgroundImage: _profilePhotoUrl.isEmpty
-                  ? const AssetImage('assets/placeholder.png')
+                  ? const AssetImage('assets/Profilephoto.png')
                   : NetworkImage(_profilePhotoUrl) as ImageProvider,
             ),
             title: Text(_username),
@@ -74,7 +76,7 @@ class _VendorHomeState extends State<VendorHome> {
           ),
           ElevatedButton(
             onPressed: () {
-              // Navigate to the deal creation page
+              // NAVIGATES TO CREATE DEAL PAGE (CreateDeal.dart)
               Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CreateDeal()));
             },
             child: const Text('Create a Deal'),
@@ -84,3 +86,5 @@ class _VendorHomeState extends State<VendorHome> {
     );
   }
 }
+
+
