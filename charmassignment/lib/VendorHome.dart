@@ -1,7 +1,8 @@
+import 'package:charmassignment/VendorAcc.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'CreateDeal.dart';  // This is hypothetical, ensure you have this screen created for creating deals
+import 'CreateDeal.dart'; // This is hypothetical, ensure you have this screen created for creating deals
 import 'Login.dart';
 
 class VendorHome extends StatefulWidget {
@@ -28,14 +29,15 @@ class _VendorHomeState extends State<VendorHome> {
 
   Future<void> _loadUserData() async {
     if (currentUser != null) {
-      DocumentSnapshot userDoc = await _firestore.collection('Users').doc(currentUser!.uid).get();
+      DocumentSnapshot userDoc =
+          await _firestore.collection('Users').doc(currentUser!.uid).get();
       if (userDoc.exists) {
         var userData = userDoc.data() as Map<String, dynamic>;
         setState(() {
           _username = userData['fullName'] as String? ?? 'No Name';
           _profilePhotoUrl = userData['profilePhoto'] as String? ?? '';
         });
-      } else{
+      } else {
         print("something went wrong");
       }
     }
@@ -43,17 +45,23 @@ class _VendorHomeState extends State<VendorHome> {
 
   void _logout() {
     _auth.signOut();
-    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const Login()));
+    Navigator.of(context)
+        .pushReplacement(MaterialPageRoute(builder: (_) => const Login()));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Vendor Home', style: Theme.of(context).textTheme.titleMedium),
+        title: const Text(
+          'Vendor Home',
+          style: TextStyle(
+              fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        backgroundColor: Colors.red,
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout, color: Colors.white),
             onPressed: _logout,
           ),
         ],
@@ -71,13 +79,19 @@ class _VendorHomeState extends State<VendorHome> {
               icon: const Icon(Icons.edit),
               onPressed: () {
                 // Navigate to a profile editing screen if needed
+                Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (context) => const VendorAcc())); 
+
               },
             ),
           ),
           ElevatedButton(
             onPressed: () {
               // NAVIGATES TO CREATE DEAL PAGE (CreateDeal.dart)
-              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CreateDeal()));
+              
+              Navigator.of(context)
+                  .push(MaterialPageRoute(builder: (_) => const CreateDeal()));
             },
             child: const Text('Create a Deal'),
           ),
@@ -86,5 +100,3 @@ class _VendorHomeState extends State<VendorHome> {
     );
   }
 }
-
-
