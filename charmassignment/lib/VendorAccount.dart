@@ -4,16 +4,17 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'Login.dart';
+import 'VendorHome.dart'; // Ensure this import points to your VendorHome.dart file
+import 'Login.dart'; // Ensure this import points to your Login.dart file
 
-class Account extends StatefulWidget {
-  const Account({super.key});
+class VendorAccount extends StatefulWidget {
+  const VendorAccount({super.key});
 
   @override
-  _AccountState createState() => _AccountState();
+  _VendorAccountState createState() => _VendorAccountState();
 }
 
-class _AccountState extends State<Account> {
+class _VendorAccountState extends State<VendorAccount> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseStorage _storage = FirebaseStorage.instance;

@@ -16,8 +16,11 @@ class CreateDeal extends StatefulWidget {
 class _CreateDealState extends State<CreateDeal> {
   final TextEditingController _detailsController = TextEditingController();
   final TextEditingController _categoryController = TextEditingController();
-  final TextEditingController _couponNameController = TextEditingController(); // New controller for coupon name
+  final TextEditingController _couponNameController =
+      TextEditingController(); // New controller for coupon name
   final TextEditingController _couponCountController = TextEditingController();
+  final TextEditingController _googleMapsLinkController =
+      TextEditingController(); // New controller for Google Maps link
   File? _logoImage;
   File? _restaurantImage;
   final picker = ImagePicker();
@@ -37,7 +40,8 @@ class _CreateDealState extends State<CreateDeal> {
 
   Future<String> uploadImage(File? imageFile, String path) async {
     if (imageFile != null) {
-      var snapshot = await FirebaseStorage.instance.ref(path).putFile(imageFile);
+      var snapshot =
+          await FirebaseStorage.instance.ref(path).putFile(imageFile);
       return await snapshot.ref.getDownloadURL();
     }
     return '';
@@ -52,11 +56,14 @@ class _CreateDealState extends State<CreateDeal> {
     if (_logoImage != null && _restaurantImage != null) {
       try {
         String logoUrl = await uploadImage(_logoImage, 'logos/$dealId');
-        String restaurantImageUrl = await uploadImage(_restaurantImage, 'restaurants/$dealId');
+        String restaurantImageUrl =
+            await uploadImage(_restaurantImage, 'restaurants/$dealId');
 
-        DocumentSnapshot vendorDoc = await FirebaseFirestore.instance.collection('Users').doc(uid).get();
+        DocumentSnapshot vendorDoc =
+            await FirebaseFirestore.instance.collection('Users').doc(uid).get();
         if (vendorDoc.exists) {
-          Map<String, dynamic> vendorData = vendorDoc.data() as Map<String, dynamic>;
+          Map<String, dynamic> vendorData =
+              vendorDoc.data() as Map<String, dynamic>;
           vendorName = vendorData['fullName'] ?? 'Unknown Vendor';
         }
 
@@ -69,14 +76,21 @@ class _CreateDealState extends State<CreateDeal> {
           'Description': _detailsController.text,
           'Rating': 0,
           'Category': _categoryController.text,
-          'Coupon Name': _couponNameController.text,  // New field for coupon name
+          'Coupon Name':
+              _couponNameController.text, // New field for coupon name
+          'Google Maps Link':
+              _googleMapsLinkController.text, // New field for Google Maps link
         });
 
         for (int i = 0; i < couponNumber; i++) {
           String couponCode = generateCouponCode();
-          String couponId = FirebaseFirestore.instance.collection('Coupons').doc().id;
+          String couponId =
+              FirebaseFirestore.instance.collection('Coupons').doc().id;
 
-          await FirebaseFirestore.instance.collection('Coupons').doc(couponId).set({
+          await FirebaseFirestore.instance
+              .collection('Coupons')
+              .doc(couponId)
+              .set({
             'CollectionID': couponId,
             'uid': uid,
             'DealID': dealId,
@@ -89,17 +103,22 @@ class _CreateDealState extends State<CreateDeal> {
         _categoryController.clear();
         _couponNameController.clear(); // Clear the new coupon name controller
         _couponCountController.clear();
+        _googleMapsLinkController
+            .clear(); // Clear the new Google Maps link controller
         setState(() {
           _logoImage = null;
           _restaurantImage = null;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Deal created successfully!')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Deal created successfully!')));
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to create deal: $e')));
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Failed to create deal: $e')));
       }
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please select both images before creating a deal.')));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Please select both images before creating a deal.')));
     }
   }
 
@@ -112,7 +131,13 @@ class _CreateDealState extends State<CreateDeal> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Create a Deal'),
+        title: const Text(
+          'Create a Deal',
+          style: TextStyle(color: Colors.white), // Set the title color to white
+        ),
+        iconTheme: const IconThemeData(
+          color: Colors.white, // Set the back button color to white
+        ),
         backgroundColor: Colors.red,
       ),
       body: SingleChildScrollView(
@@ -137,7 +162,8 @@ class _CreateDealState extends State<CreateDeal> {
             ),
             const SizedBox(height: 20),
             TextField(
-              controller: _couponNameController,  // New text field for coupon name
+              controller:
+                  _couponNameController, // New text field for coupon name
               decoration: const InputDecoration(
                 labelText: 'Coupon Name',
                 border: OutlineInputBorder(),
@@ -151,6 +177,15 @@ class _CreateDealState extends State<CreateDeal> {
                 border: OutlineInputBorder(),
               ),
               keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller:
+                  _googleMapsLinkController, // New text field for Google Maps link
+              decoration: const InputDecoration(
+                labelText: 'Google Maps Link',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 20),
             _logoImage == null
@@ -172,10 +207,16 @@ class _CreateDealState extends State<CreateDeal> {
             ),
             const SizedBox(height: 20),
             ElevatedButton(
-              onPressed: createDeal,
-              child: const Text('Create Deal'),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            ),
+              onPressed: createDeal, // Set text color to white
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor:
+                    Colors.white, // Set the button's text color to white
+              ),
+              child: const Text('Create Deal',
+                  style: TextStyle(
+                      color: Colors.white)),
+            )
           ],
         ),
       ),

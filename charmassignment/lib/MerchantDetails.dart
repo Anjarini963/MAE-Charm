@@ -305,8 +305,8 @@ class _MerchantDetailsState extends State<MerchantDetails> {
               const SizedBox(height: 10),
               ElevatedButton(
                 onPressed: _submitReview,
-                child: const Text('Submit Review', style: TextStyle(color: Colors.white)),
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                child: const Text('Submit Review', style: TextStyle(color: Colors.white)),
               ),
               const SizedBox(height: 20),
             ],
@@ -320,16 +320,16 @@ class _MerchantDetailsState extends State<MerchantDetails> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Coupons Left', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text('Coupons Used', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
               LinearProgressIndicator(
                 value: totalCoupons == 0 ? 0 : pendingOrRedeemedCoupons / totalCoupons,
                 backgroundColor: Colors.grey[300],
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
               ),
               const SizedBox(height: 10),
               Text(
-                'Coupons: $pendingOrRedeemedCoupons / $totalCoupons',
+                'Used Coupons: $pendingOrRedeemedCoupons / $totalCoupons',
                 style: const TextStyle(fontSize: 16),
               ),
             ],

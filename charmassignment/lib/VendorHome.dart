@@ -1,8 +1,10 @@
-import 'package:charmassignment/VendorAcc.dart';
+import 'package:charmassignment/Reviews.dart';
+import 'package:charmassignment/VendorAccount.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'CreateDeal.dart'; // This is hypothetical, ensure you have this screen created for creating deals
+import 'CreateDeal.dart';
+import 'EditDeals.dart';
 import 'Login.dart';
 
 class VendorHome extends StatefulWidget {
@@ -29,8 +31,7 @@ class _VendorHomeState extends State<VendorHome> {
 
   Future<void> _loadUserData() async {
     if (currentUser != null) {
-      DocumentSnapshot userDoc =
-          await _firestore.collection('Users').doc(currentUser!.uid).get();
+      DocumentSnapshot userDoc = await _firestore.collection('Users').doc(currentUser!.uid).get();
       if (userDoc.exists) {
         var userData = userDoc.data() as Map<String, dynamic>;
         setState(() {
@@ -45,57 +46,91 @@ class _VendorHomeState extends State<VendorHome> {
 
   void _logout() {
     _auth.signOut();
-    Navigator.of(context)
-        .pushReplacement(MaterialPageRoute(builder: (_) => const Login()));
+    Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const Login()));
+  }
+
+  void _navigateToEditDeal() {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => EditDeals(uid: currentUser!.uid)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Vendor Home',
-          style: TextStyle(
-              fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-        ),
         backgroundColor: Colors.red,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout, color: Colors.white),
-            onPressed: _logout,
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          ListTile(
-            leading: CircleAvatar(
-              backgroundImage: _profilePhotoUrl.isEmpty
-                  ? const AssetImage('assets/Profilephoto.png')
-                  : NetworkImage(_profilePhotoUrl) as ImageProvider,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              _username,
+              style: const TextStyle(color: Colors.white),
             ),
-            title: Text(_username),
-            trailing: IconButton(
-              icon: const Icon(Icons.edit),
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const VendorAccount()));
+              },
+              child: CircleAvatar(
+                backgroundImage: _profilePhotoUrl.isEmpty
+                    ? const AssetImage('assets/Profilephoto.png')
+                    : NetworkImage(_profilePhotoUrl) as ImageProvider,
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildButton(
+              icon: Icons.add_circle,
+              label: 'Create Deal',
               onPressed: () {
-                // Navigate to a profile editing screen if needed
-                Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (context) => const VendorAcc())); 
-
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CreateDeal()));
               },
             ),
+            const SizedBox(height: 20),
+            _buildButton(
+              icon: Icons.edit,
+              label: 'Edit Deals',
+              onPressed: _navigateToEditDeal,
+            ),
+            const SizedBox(height: 20),
+            _buildButton(
+              icon: Icons.qr_code_scanner,
+              label: 'Redeem Coupon',
+              onPressed: () {
+                //Navigator.of(context).push(MaterialPageRoute(builder: (_) => RedeemCoupon(uid: currentUser!.uid)));
+              },
+            ),
+            const SizedBox(height: 20),
+            _buildButton(
+              icon: Icons.reviews,
+              label: 'Reviews',
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => Reviews(uid: currentUser!.uid)));
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildButton({required IconData icon, required String label, required VoidCallback onPressed}) {
+    return SizedBox(
+      width: 250,
+      child: ElevatedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, color: Colors.white),
+        label: Text(label, style: const TextStyle(color: Colors.white, fontSize: 16)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.red,
+          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
           ),
-          ElevatedButton(
-            onPressed: () {
-              // NAVIGATES TO CREATE DEAL PAGE (CreateDeal.dart)
-              
-              Navigator.of(context)
-                  .push(MaterialPageRoute(builder: (_) => const CreateDeal()));
-            },
-            child: const Text('Create a Deal'),
-          ),
-        ],
+        ),
       ),
     );
   }
